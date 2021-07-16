@@ -1,0 +1,114 @@
+---
+title: "Weather data"
+author: "Bianca Washington"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+```{r setup, include=F}
+options(scipen=999)
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r, message=T}
+weather=read.csv(file="/Users/Biancawashington/Desktop/unc assignments/rdu-weather-history-date.csv", head = T, sep=",")
+```
+
+```{r}
+names(weather)
+```
+
+```{r, eval=F}
+str(weather, give.attr=F)
+```
+
+```{r}
+weather2= weather %>%
+  mutate(weather, Year= date %/% 10000) %>%
+    mutate(weather, Day= date %% 100) %>%
+    mutate(weather, Month= (date%/% 100) %%100)
+str(weather2)
+```
+
+```{r}
+weather3=
+weather2 %>%
+  mutate(fog= na_if(fog, "")) %>%
+  mutate(fogheavy= na_if(fogheavy, "")) %>%
+  mutate(mist= na_if(mist, "")) %>%
+  mutate(rain= na_if(rain, "")) %>%
+  mutate(fogground= na_if(fogground, "")) %>%
+  mutate(ice= na_if(ice, "")) %>%
+  mutate(glaze= na_if(glaze, "")) %>%
+  mutate(drizzle= na_if(drizzle, "")) %>%
+  mutate(snow= na_if(snow, "")) %>%
+  mutate(freezingrain= na_if(freezingrain, "")) %>%
+  mutate(smokehaze= na_if(smokehaze, "")) %>%
+  mutate(thunder= na_if(thunder, "")) %>%
+  mutate(highwind= na_if(highwind, "")) %>%
+  mutate(hail= na_if(hail, "")) %>%
+  mutate(blowingsnow= na_if(blowingsnow, "")) %>%
+  mutate(dust= na_if(dust, "")) %>%
+  mutate(freezingfog= na_if(freezingfog, ""))
+head(weather3)
+```
+eval=F
+```{r}
+weather3= weather3 %>%
+  select("Year", "Day","Month",everything(), -fastest2minwinddir, -fastest2minwindspeed, -fastest5secwinddir, -fastest5secwindspeed, -date,)
+head(weather3)
+```
+
+```{r, message=T}
+policeincidents=read.csv(file="/Users/Biancawashington/Desktop/unc assignments/Raleigh_Police_Incidents.csv", head = T, sep=",")
+```
+
+
+```{r}
+names(policeincidents)
+```
+
+```{r}
+policeincidents1= policeincidents  %>%
+  select(-X, -Y, -updated_date,-OBJECTID, -GlobalID, -crime_code, -crime_type, -reported_block_address, -latitude, -longitude, -agency, -city, -city_of_incident, -case_number) %>%
+  rename(Year=reported_year, Month=reported_month, Day=reported_day, Hour=reported_hour, dayofwk=reported_dayofwk)
+head(policeincidents1)
+```
+```{r, eval=F}
+unique(weather3[c('Year')])
+unique(policeincidents1[c('Year')])
+```
+
+
+```{r, eval=F}
+head(arrange(policeincidents1, Year, Month, Day))
+head(arrange(weather3, Year, Month, Day))
+```
+```{r}
+policeweather= left_join(policeincidents1, weather3, by= c("Year", "Month", "Day"))
+head(policeweather)
+```
+```{r}
+policeweather1=policeweather %>%
+  arrange(Year, Month, Day) 
+```
+
+```{r}
+policeweather1= separate(policeweather1, crime_description, into = c("crime_category2", "crime_description"), sep = "/") 
+policeweather1= separate(policeweather1, reported_date, into = c("reported_date", "reported_time"), sep = 10)
+
+head(policeweather1)
+```
+
+
+```{r, include=F}
+unique(policeweather1[c('Month')])
+str(policeweather1)
+head(policeweather1)
+```
+
+```{r}
+policeweather1$Holiday=ifelse(policeweather1$Month==12 & policeweather1$Day==25, "Christmas", "Normal Day")
+```
+
+
