@@ -77,6 +77,8 @@ head(policeincidents1)
 ```{r, eval=F}
 unique(weather3[c('Year')])
 unique(policeincidents1[c('Year')])
+unique(policeincidents[c('reported_year')])
+
 ```
 
 
@@ -96,7 +98,7 @@ policeweather1=policeweather %>%
 ```{r}
 policeweather1= separate(policeweather1, crime_description, into = c("crime_category2", "crime_description"), sep = "/") 
 policeweather1= separate(policeweather1, reported_date, into = c("reported_date", "reported_time"), sep = 10)
-
+names(policeweather1)
 head(policeweather1)
 ```
 
@@ -108,7 +110,20 @@ head(policeweather1)
 ```
 
 ```{r}
-policeweather1$Holiday=ifelse(policeweather1$Month==12 & policeweather1$Day==25, "Christmas", "Normal Day")
+holiday=read.csv(file="/Users/Biancawashington/Downloads/US Holiday Dates (2004-2021).csv", head = T, sep=",")
+```
+
+```{r}
+police.weather.holiday= left_join(policeweather1, holiday, by= c("Year", "Month", "Day"))
+```
+```{r}
+police.weather.holiday= police.weather.holiday %>%
+  select(-Date, -WeekDay)
+```
+
+
+```{r, include=F}
+filter(police.weather.holiday, Month==7,Day==4)
 ```
 
 
