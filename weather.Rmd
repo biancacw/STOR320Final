@@ -4,6 +4,7 @@ author: "Bianca Washington"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 output: html_document
 ---
+
 ```{r setup, include=F}
 options(scipen=999)
 knitr::opts_chunk$set(echo = TRUE)
@@ -52,7 +53,9 @@ weather2 %>%
   mutate(freezingfog= na_if(freezingfog, ""))
 head(weather3)
 ```
+
 eval=F
+
 ```{r}
 weather3= weather3 %>%
   select("Year", "Day","Month",everything(), -fastest2minwinddir, -fastest2minwindspeed, -fastest5secwinddir, -fastest5secwindspeed, -date,)
@@ -62,7 +65,6 @@ head(weather3)
 ```{r, message=T}
 policeincidents=read.csv(file="/Users/Biancawashington/Desktop/unc assignments/Raleigh_Police_Incidents.csv", head = T, sep=",")
 ```
-
 
 ```{r}
 names(policeincidents)
@@ -74,6 +76,7 @@ policeincidents1= policeincidents  %>%
   rename(Year=reported_year, Month=reported_month, Day=reported_day, Hour=reported_hour, dayofwk=reported_dayofwk)
 head(policeincidents1)
 ```
+
 ```{r, eval=F}
 unique(weather3[c('Year')])
 unique(policeincidents1[c('Year')])
@@ -81,15 +84,16 @@ unique(policeincidents[c('reported_year')])
 
 ```
 
-
 ```{r, eval=F}
 head(arrange(policeincidents1, Year, Month, Day))
 head(arrange(weather3, Year, Month, Day))
 ```
+
 ```{r}
 policeweather= left_join(policeincidents1, weather3, by= c("Year", "Month", "Day"))
 head(policeweather)
 ```
+
 ```{r}
 policeweather1=policeweather %>%
   arrange(Year, Month, Day) 
@@ -101,7 +105,6 @@ policeweather1= separate(policeweather1, reported_date, into = c("reported_date"
 names(policeweather1)
 head(policeweather1)
 ```
-
 
 ```{r, include=F}
 unique(policeweather1[c('Month')])
@@ -116,14 +119,91 @@ holiday=read.csv(file="/Users/Biancawashington/Downloads/US Holiday Dates (2004-
 ```{r}
 police.weather.holiday= left_join(policeweather1, holiday, by= c("Year", "Month", "Day"))
 ```
+
 ```{r}
 police.weather.holiday= police.weather.holiday %>%
-  select(-Date, -WeekDay)
+  select(-Date, -WeekDay, -crime_category2)
+
+unique(police.weather.holiday[c('district')])
+filter(police.weather.holiday, district== "Downtown")
+
+```
+```{r}
+write.csv(police.weather.holiday, file="police.weather.holiday.table.csv")
+```
+
+```{r, include=T}
+holidaycount= count(filter(police.weather.holiday, !is.na(Holiday)))
+nonholidaycount = count(filter(police.weather.holiday, is.na(Holiday)))
+
+prop= holidaycount/ count(police.weather.holiday)
+# police.weather.holiday$Holiday[is.na(police.weather.holiday$Holiday)] = "Normal Day"
+holidaycount
+nonholidaycount
+prop
+```
+
+Question 7: Which day of the week do most crimes occur on? -- Bianca
+
+**ANSWER** Most crimes occur on Monday.
+
+```{r}
+dayofwk.factor= as.factor(police.weather.holiday$dayofwk)
+dayofwk.factor= factor(dayofwk.factor, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+dayofwk.factor2= data.frame(dayofwk.factor)
+
+
+summary.dayofwkfac= dayofwk.factor2 %>%
+  count(dayofwk.factor) %>%
+  mutate(prop= n/sum(n))
+
+arrange(summary.dayofwkfac, desc(n))
+```
+
+```{r}
+ggplot(data=tibble (x=dayofwk.factor)) +
+  geom_bar(aes(x), fill="lightskyblue") +
+  xlab("Day of the Week") + ylab("Count")
+
+ggplot(data=tibble (x=fct_infreq(dayofwk.factor))) +
+  geom_bar(aes(x), fill="royalblue") +
+  xlab("Day of the Week") + ylab("Count")
+```
+Question 1: What is the relationship btw temp and rate of crime?
+
+```{r}
+ggplot(police.weather.holiday, aes(x=crime_category, y=temperaturemax)) +
+  geom_boxplot() +
+  coord_flip()
+```
+
+```{r}
+factor.reporteddate= as.factor(police.weather.holiday$reported_date)
+factor.reporteddate2=data.frame(factor.reporteddate)
+
+
+crimeperday= factor.reporteddate2%>%
+  count(factor.reporteddate, factor.reporteddate)%>%
+  mutate(prop2= n/sum(n)) %>%
+  mutate(reported_date=factor.reporteddate)
+
+crimeday= left_join(crimeperday, police.weather.holiday, by="reported_date")
+
+
+ggplot(crimeday, aes(x=tempgroup, y=prop2))+
+  ylab("Proportion of crime per day") +
+  geom_col()
 ```
 
 
-```{r, include=F}
-filter(police.weather.holiday, Month==7,Day==4)
-```
+```{r}
+police.weather.holiday %>%
+  mutate(tempgroup=cut(temperaturemax,pretty(temperaturemax,5)))
 
+levels(police.weather.holiday$tempgroup)
+
+police.weather.holiday %>%
+ggplot(aes(x=tempgroup))+
+  geom_bar()
+```
 
